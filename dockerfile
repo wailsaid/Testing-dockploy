@@ -12,7 +12,9 @@ RUN apk add --no-cache \
     libxml2-dev \
     zip \
     unzip \
-    supervisor
+    supervisor \
+    nodejs \
+    npm
 
 # PHP extensions
 RUN docker-php-ext-install \
@@ -29,20 +31,19 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy app
 COPY . .
 
-# Install dependencies
+# Backend deps
 RUN composer install --no-dev --optimize-autoloader
+
+# Frontend build (THIS FIXES YOUR ERROR)
+RUN npm install && npm run build
 
 # Permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
-# Nginx config
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
-
-# Supervisor config
 COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
 
 EXPOSE 8080
